@@ -31,14 +31,54 @@ def optimize_resume(resume_text: str, jd_text: str, score_result: dict) -> dict:
 
 def _build_prompt(resume_text: str, jd_text: str, score_result: dict) -> str:
     missing = ", ".join(score_result.get("missing_keywords", [])[:20])
-    return f"""You are an expert resume writer and ATS optimization specialist.
+    return f"""You are a professional resume editor. Your job is to lightly edit the existing resume so it better matches the job description — NOT rewrite it from scratch, and NOT make it sound AI-generated.
 
-TASK: Rewrite the resume below to better match the job description. Focus on:
-1. Naturally incorporating these missing keywords: {missing}
-2. Strengthening bullet points with quantifiable achievements and action verbs
-3. Rewriting the summary/objective to align with the role
-4. Keeping ALL original experience, education, and facts — do not fabricate anything
-5. Maintaining a clean, ATS-friendly plain-text format
+=== WHAT YOU MUST NEVER DO ===
+- Never use these AI buzzwords: leveraged, spearheaded, utilized, passionate, dynamic, synergize, holistic, robust, cutting-edge, state-of-the-art, best-in-class, innovative, transformative, orchestrated, pioneered, catalyzed, streamlined (unless already in original)
+- Never fabricate metrics, credentials, or experience not in the original resume
+- Never start every bullet with the same verb — vary them
+- Never use passive voice ("was responsible for")
+- Never add fluffy filler phrases ("demonstrated ability to", "proven track record of")
+- Never use first person ("I built", "I managed") — omit the subject entirely
+
+=== ATS FORMAT RULES (follow exactly) ===
+Line 1: Full name only
+Line 2: Phone | Email | City, State | LinkedIn URL (all on one line, pipe-separated)
+Blank line
+SUMMARY (optional, 2 sentences max, factual only)
+Blank line
+EXPERIENCE
+Company Name | Job Title | City, State
+Month Year – Month Year  (or "Present")
+• Bullet: action verb + what you did + result/scope if it exists in original
+• Keep bullets to 1 line when possible
+Blank line between each job
+EDUCATION
+School Name | Degree, Field | Year – Year
+GPA: X.X (only if above 3.0)
+SKILLS
+Category: skill1, skill2, skill3
+PROJECTS (if present)
+Project Name | Date
+• What it does, what tech was used
+
+Rules:
+- Section headers ALL CAPS, no decorations
+- Bullets use • character only
+- No tables, no columns, no special characters except | and •
+- Dates: "Jan 2023 – Mar 2025" format
+- One blank line between sections, NO blank lines between bullets within a job
+
+=== KEYWORD INTEGRATION ===
+Weave in ONLY keywords that genuinely fit the person's actual experience: {missing}
+Do not force keywords where they don't belong.
+
+=== YOUR TASK ===
+1. Keep the person's own voice — make edits feel natural, not polished-by-AI
+2. Tighten wordy bullets to be punchy and specific
+3. Add relevant keywords from the JD where they authentically fit
+4. Ensure every section follows the ATS format above exactly
+5. Summary should reflect the JD role, written in 3rd-person omitted style ("Robotics engineer with 3 years..." not "I am a robotics engineer...")
 
 JOB DESCRIPTION:
 {jd_text}
@@ -46,12 +86,12 @@ JOB DESCRIPTION:
 ORIGINAL RESUME:
 {resume_text}
 
-Respond ONLY with a JSON object in this exact format (no markdown, no extra text):
+Respond ONLY with a valid JSON object (no markdown, no code fences, no extra text before or after):
 {{
-  "optimized_resume": "<full optimized resume text with \\n for newlines>",
+  "optimized_resume": "<full resume text, use actual newline characters>",
   "changes_made": [
-    "Brief description of change 1",
-    "Brief description of change 2"
+    "Specific change 1 — e.g. Added 'ROS2' to Skills under Robotics",
+    "Specific change 2 — e.g. Tightened bullet at Job X to include scope"
   ]
 }}"""
 
@@ -91,22 +131,43 @@ def _call_anthropic_api(prompt: str) -> dict:
 
 def _parse_claude_response(output: str) -> dict:
     # Strip markdown code fences if present
+    output = output.strip()
     if output.startswith("```"):
         lines = output.split("\n")
-        output = "\n".join(lines[1:-1] if lines[-1] == "```" else lines[1:])
+        # Remove first line (```json or ```) and last line (```)
+        inner = lines[1:]
+        if inner and inner[-1].strip() == "```":
+            inner = inner[:-1]
+        output = "\n".join(inner).strip()
 
+    # Try direct JSON parse first
     try:
         data = json.loads(output)
         return {
-            "optimized_text": data.get("optimized_resume", ""),
+            "optimized_text": data.get("optimized_resume", "").strip(),
             "changes_made": data.get("changes_made", []),
         }
     except json.JSONDecodeError:
-        # Claude returned plain text instead of JSON — treat the whole output as the resume
-        return {
-            "optimized_text": output,
-            "changes_made": ["Resume rewritten to better match job description"],
-        }
+        pass
+
+    # Fallback: extract JSON object with regex (handles extra text around JSON)
+    import re
+    match = re.search(r'\{.*\}', output, re.DOTALL)
+    if match:
+        try:
+            data = json.loads(match.group())
+            return {
+                "optimized_text": data.get("optimized_resume", "").strip(),
+                "changes_made": data.get("changes_made", []),
+            }
+        except json.JSONDecodeError:
+            pass
+
+    # Last resort: treat entire output as the resume text
+    return {
+        "optimized_text": output,
+        "changes_made": ["Resume updated to match job description"],
+    }
 
 
 def _fallback_response(error_msg: str) -> dict:
