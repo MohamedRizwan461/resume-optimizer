@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resume Optimizer</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">⚡</span>
+        <span>Resume Optimizer</span>
+      </div>
+      <span class="tagline">ATS-powered by Claude AI</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- Input Section -->
+    <section class="input-section">
+      <div class="input-grid">
+        <!-- Resume Upload -->
+        <div class="card">
+          <h2>Resume</h2>
+          <div class="drop-zone" id="dropZone">
+            <div class="drop-icon">📄</div>
+            <p class="drop-text">Drag & drop your resume here</p>
+            <p class="drop-sub">PDF or DOCX · Max 5 MB</p>
+            <label class="btn btn-outline" for="fileInput">Browse File</label>
+            <input type="file" id="fileInput" accept=".pdf,.docx" hidden>
+          </div>
+          <div class="file-info" id="fileInfo" hidden>
+            <span class="file-badge" id="fileName"></span>
+            <button class="btn-icon" id="clearFile" title="Remove file">✕</button>
+          </div>
+        </div>
+
+        <!-- Job Description -->
+        <div class="card">
+          <h2>Job Description</h2>
+          <textarea
+            id="jdInput"
+            placeholder="Paste the full job description here…&#10;&#10;Include the role title, requirements, and responsibilities for best results."
+            rows="12"
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="action-row">
+        <button class="btn btn-primary" id="analyzeBtn" disabled>
+          <span class="btn-text">Analyze & Optimize</span>
+          <span class="spinner" hidden></span>
+        </button>
+        <p class="action-hint" id="actionHint">Upload a resume and paste a job description to begin</p>
+      </div>
+    </section>
+
+    <!-- Results Section -->
+    <section class="results-section" id="results" hidden>
+
+      <!-- ATS Score -->
+      <div class="card score-card">
+        <div class="score-header">
+          <div>
+            <h2>ATS Match Score</h2>
+            <p class="score-sub">Keyword similarity between your resume and the JD</p>
+          </div>
+          <div class="score-circle" id="scoreCircle">
+            <span id="scoreValue">0</span>
+            <small>/100</small>
+          </div>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+      </div>
+
+      <!-- Keywords -->
+      <div class="keywords-grid">
+        <div class="card">
+          <h3 class="kw-title missing">Missing Keywords</h3>
+          <div class="kw-chips" id="missingKeywords"></div>
+        </div>
+        <div class="card">
+          <h3 class="kw-title present">Present Keywords</h3>
+          <div class="kw-chips" id="presentKeywords"></div>
+        </div>
+      </div>
+
+      <!-- ATS Issues -->
+      <div class="card" id="atsIssuesCard" hidden>
+        <h3>ATS Formatting Issues</h3>
+        <ul class="issues-list" id="atsIssues"></ul>
+      </div>
+
+      <!-- Changes Made -->
+      <div class="card" id="changesCard" hidden>
+        <h3>Changes Made by AI</h3>
+        <ul class="changes-list" id="changesList"></ul>
+      </div>
+
+      <!-- Diff View -->
+      <div class="card diff-card">
+        <div class="diff-header">
+          <h2>Resume Comparison</h2>
+          <button class="btn btn-outline btn-sm" id="exportBtn">Export Optimized PDF</button>
+        </div>
+        <div class="diff-grid">
+          <div class="diff-panel">
+            <h3 class="diff-label original">Original</h3>
+            <pre class="diff-text" id="originalText"></pre>
+          </div>
+          <div class="diff-panel">
+            <h3 class="diff-label optimized">Optimized</h3>
+            <pre class="diff-text" id="optimizedText"></pre>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Error Toast -->
+    <div class="toast" id="toast" hidden>
+      <span id="toastMsg"></span>
+      <button class="toast-close" onclick="hideToast()">✕</button>
+    </div>
+  </main>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>
