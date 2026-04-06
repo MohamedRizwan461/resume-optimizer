@@ -4,5 +4,5 @@ python-multipart
 pdfplumber
 python-docx
 scikit-learn
-weasyprint
+reportlab
 python-dotenv
