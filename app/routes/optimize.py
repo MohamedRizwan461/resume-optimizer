@@ -4,7 +4,7 @@ from app.schemas import OptimizeResponse, HealthResponse
 from app.services.resume_parser import parse_resume
 from app.services.ats_scorer import score_resume
 from app.services.ai_optimizer import optimize_resume
-from app.services.exporter import export_pdf
+from app.services.exporter import export_pdf, export_docx
 
 router = APIRouter()
 
@@ -55,6 +55,21 @@ async def optimize(
         ats_issues=score_result["ats_issues"],
         changes_made=ai_result.get("changes_made", []),
     )
+
+
+@router.post("/export/docx")
+async def export_word(optimized_text: str = Form(...)):
+    if not optimized_text.strip():
+        raise HTTPException(status_code=400, detail="No resume text to export")
+    try:
+        docx_bytes = export_docx(optimized_text)
+        return Response(
+            content=docx_bytes,
+            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            headers={"Content-Disposition": "attachment; filename=optimized_resume.docx"},
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/export")

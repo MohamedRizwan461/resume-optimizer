@@ -11,8 +11,9 @@ const clearFile   = document.getElementById('clearFile');
 const jdInput     = document.getElementById('jdInput');
 const analyzeBtn  = document.getElementById('analyzeBtn');
 const actionHint  = document.getElementById('actionHint');
-const results     = document.getElementById('results');
-const exportBtn   = document.getElementById('exportBtn');
+const results        = document.getElementById('results');
+const exportDocxBtn  = document.getElementById('exportDocxBtn');
+const exportPdfBtn   = document.getElementById('exportPdfBtn');
 
 /* ── File handling ── */
 dropZone.addEventListener('click', () => fileInput.click());
@@ -194,42 +195,45 @@ function renderDiff(originalText, optimizedText, side) {
   }
 }
 
-/* ── Export PDF ── */
-exportBtn.addEventListener('click', async () => {
+/* ── Export helpers ── */
+async function doExport(endpoint, filename, btn, label) {
   if (!currentResult || !currentResult.optimized_text) {
     showToast('No optimized resume to export');
     return;
   }
-
-  exportBtn.textContent = 'Exporting…';
-  exportBtn.disabled    = true;
-
+  btn.textContent = 'Exporting…';
+  btn.disabled    = true;
   try {
     const formData = new FormData();
     formData.append('optimized_text', currentResult.optimized_text);
-
-    const res = await fetch('/api/export', { method: 'POST', body: formData });
-
+    const res = await fetch(endpoint, { method: 'POST', body: formData });
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: 'Export failed' }));
       showToast(err.detail || 'Export failed');
       return;
     }
-
     const blob = await res.blob();
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
     a.href     = url;
-    a.download = 'optimized_resume.pdf';
+    a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
   } catch (err) {
     showToast('Export failed — check backend logs');
   } finally {
-    exportBtn.textContent = 'Export Optimized PDF';
-    exportBtn.disabled    = false;
+    btn.textContent = label;
+    btn.disabled    = false;
   }
-});
+}
+
+exportDocxBtn.addEventListener('click', () =>
+  doExport('/api/export/docx', 'optimized_resume.docx', exportDocxBtn, '⬇ Export as Word (.docx)')
+);
+
+exportPdfBtn.addEventListener('click', () =>
+  doExport('/api/export', 'optimized_resume.pdf', exportPdfBtn, 'Export as PDF')
+);
 
 /* ── Toast ── */
 function showToast(msg) {

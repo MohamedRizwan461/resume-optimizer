@@ -375,6 +375,14 @@ textarea::placeholder { color: var(--text-muted); }
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.export-btns {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .diff-grid {
